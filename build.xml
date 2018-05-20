@@ -46,8 +46,25 @@ cleanBuildAndTest - clean, build, and test
 test - run all tests
     </echo>
     </target>
+
+    <available file=".git" type="dir" property="git.present"/>
+
+    <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="describe"/>
+            <arg value="--tags"/>
+            <arg value="--always"/>
+            <arg value="HEAD"/>
+        </exec>
+        <condition property="repository.version" value="${git.revision}" else="unknown">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
+    </target>
     
-    <target name="jar" depends="compile">
+    <target name="jar" depends="git.revision,compile">
         <mkdir dir="${lib.dir}" />        
         <jar jarfile="${lib.dir}/${jar.file}">
             <fileset dir="${classes.dir}"/>
@@ -73,7 +90,7 @@ test - run all tests
 		<echo file="${linearizer.version.dir}/Linearizer.java">
 		package linearizer.version;
 		public interface Linearizer {
-		    public static final String version="${distro.version}";
+		    public static final String version="${git.revision}";
 		}
 		</echo>
 
